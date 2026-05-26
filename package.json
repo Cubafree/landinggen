@@ -1,0 +1,18 @@
+{
+  "name": "landinggen",
+  "version": "1.0.0",
+  "description": "Landing page generator with OpenAI image generation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "better-sqlite3": "^12.10.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-basic-auth": "^1.2.1",
+    "openai": "^4.52.0"
+  }
+}

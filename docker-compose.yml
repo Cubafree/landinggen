@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_IMAGE_MODEL=${OPENAI_IMAGE_MODEL:-dall-e-3}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - PORT=3000
+      - BASE_URL=${BASE_URL:-http://localhost:3000}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./landings.db:/app/landings.db
+    restart: unless-stopped
