@@ -30,8 +30,10 @@ async function generateImage(prompt) {
     model,
     prompt,
     n: 1,
+    // gpt-image-*: 1536x1024 landscape, dall-e-3: 1792x1024
     size: isGptImage ? '1536x1024' : '1792x1024',
-    quality: 'standard',
+    // gpt-image-*: low/medium/high/auto  |  dall-e-3: standard/hd
+    quality: isGptImage ? 'high' : 'hd',
   };
 
   if (!isGptImage) {
