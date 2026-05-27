@@ -27,6 +27,25 @@ function slugify(text) {
   return slug || `promo-${Date.now()}`;
 }
 
+/**
+ * Wraps the user's short scene description with a full cinematic prompt.
+ * The accent color is woven into the lighting/particle palette.
+ * Right ~40% of the frame is kept dark for the landing panel overlay.
+ */
+function buildImagePrompt(scene, accentColor) {
+  return `
+${scene}.
+Hyper-realistic cinematic sports photography, 8K ultra-HD, award-winning editorial.
+Dynamic action composition, dramatic stadium floodlights with anamorphic lens flares.
+Glowing neon particle streams and light trails in ${accentColor} tones radiating from the action.
+Electric energy sparks, motion blur on fast-moving elements, bokeh crowd in background.
+Atmospheric depth of field, volumetric light rays cutting through stadium haze.
+Rich Hollywood colour grading — deep shadows, vibrant midtones, high contrast.
+The right 35–40 % of the frame intentionally fades to near-black so text can overlay it.
+Photorealistic, Canon EOS R5 85 mm f/1.4 aesthetic, no text, no logos, no watermarks.
+`.trim();
+}
+
 async function generateImage(prompt) {
   const model = process.env.OPENAI_IMAGE_MODEL || 'dall-e-3';
   const isGptImage = model.startsWith('gpt-image-');
@@ -126,10 +145,10 @@ router.post('/create', async (req, res) => {
     const pSide         = panel_side  || 'right';
     const lOrder        = layer_order || 'logo,title,subtitle,promo,cta';
 
-    // Append accent color to image prompt so the generated image "rhymes" with the UI
+    // Build full cinematic prompt from user's short scene description
     const finalPrompt = hasPrompt
-      ? `${image_prompt.trim()}, dominant accent color: ${accentColor}, match this color in lighting and atmosphere`
-      : (image_prompt || '');
+      ? buildImagePrompt(image_prompt.trim(), accentColor)
+      : '';
 
     const result = db.prepare(`
       INSERT OR IGNORE INTO landings
@@ -308,10 +327,10 @@ function renderAdmin(landings, baseUrl) {
           <span class="hint">Цвет акцента передаётся в промпт и все UI-элементы лендинга</span>
         </label>
 
-        <label>Image Prompt (OpenAI)
-          <textarea name="image_prompt" rows="4"
-            placeholder="football player kicking ball, dramatic stadium lights, blue purple cinematic, photorealistic, 8k"></textarea>
-          <span class="hint">Публикуется сразу · изображение генерируется в фоне (~2 мин)</span>
+        <label>Сцена для изображения
+          <textarea name="image_prompt" rows="3"
+            placeholder="футболист бьёт по мячу на стадионе&#10;боксёр в углу ринга, прожекторы&#10;гонщик Формулы 1 на повороте"></textarea>
+          <span class="hint">Опишите сцену кратко — стиль, частицы и кинематограф добавляются автоматически · генерация ~2 мин</span>
         </label>
 
         <button type="submit" class="btn-create" id="submitBtn">
