@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
+<!--
+  NOTE: NO dir="rtl" on <html> — it flips flex-end to the LEFT side visually.
+  RTL is applied per-element via dir="auto" so Arabic text flows correctly
+  without breaking the layout positioning.
+-->
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -11,27 +16,27 @@
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* ─── Full-screen base — never scrollable ─── */
     html, body {
       width: 100%; height: 100%;
       overflow: hidden;
     }
+    body { font-family: 'Lalezar', sans-serif; background: #03001e; }
 
-    body {
-      font-family: 'Lalezar', sans-serif;
-      background: #03001e;
-    }
-
-    /* ─── Layout ─── */
+    /* ─── Root container ─── */
     .main {
       position: relative;
       width: 100vw;
       height: 100vh;
+      height: 100dvh; /* respect mobile browser chrome */
       display: flex;
       align-items: center;
       overflow: hidden;
     }
 
-    /* ─── Background image ─── */
+    /* ══════════════════════════════════
+       BACKGROUND
+    ══════════════════════════════════ */
     .bg {
       position: absolute;
       inset: 0;
@@ -42,80 +47,85 @@
       position: absolute;
       inset: 0;
       background-size: cover;
-      background-position: center left;
+      background-position: center;
       background-repeat: no-repeat;
     }
+    .has-image  .bg-img { background-image: var(--bg-url); }
+    .no-image   .bg-img { background: radial-gradient(ellipse at 30% 50%, #1a0a4a 0%, #03001e 70%); }
 
-    .has-image .bg-img {
-      background-image: var(--bg-url);
-    }
-
-    .no-image .bg-img {
-      background: radial-gradient(ellipse at 30% 50%, #1a0a4a 0%, #03001e 60%);
-    }
-
-    /* dark gradient overlay — heavier on the right (text side in RTL) */
+    /* Directional gradient — panel-right (default): image left, dark right */
     .bg-overlay {
       position: absolute;
       inset: 0;
       background: linear-gradient(
+        to left,
+        rgba(2,0,20,1.00)  0%,
+        rgba(2,0,20,0.95) 15%,
+        rgba(2,0,20,0.75) 38%,
+        rgba(2,0,20,0.20) 62%,
+        rgba(2,0,20,0.00) 100%
+      );
+    }
+    /* panel-left: image right, dark left */
+    .panel-left .bg-overlay {
+      background: linear-gradient(
         to right,
-        rgba(2, 0, 20, 0.05) 0%,
-        rgba(2, 0, 20, 0.3)  35%,
-        rgba(2, 0, 20, 0.82) 58%,
-        rgba(2, 0, 20, 0.97) 75%,
-        rgba(2, 0, 20, 1)    100%
+        rgba(2,0,20,1.00)  0%,
+        rgba(2,0,20,0.95) 15%,
+        rgba(2,0,20,0.75) 38%,
+        rgba(2,0,20,0.20) 62%,
+        rgba(2,0,20,0.00) 100%
       );
     }
 
-    /* bottom vignette */
+    /* Bottom vignette always */
     .bg-vignette {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(2,0,20,0.7) 0%, transparent 40%);
+      background: linear-gradient(to top, rgba(2,0,20,0.55) 0%, transparent 35%);
     }
 
-    /* atmospheric glow particles */
+    /* Atmospheric glow */
     .glow {
       position: absolute;
       border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.35;
+      filter: blur(90px);
+      opacity: 0.3;
       pointer-events: none;
     }
-    .glow-1 {
-      width: 500px; height: 500px;
-      background: #2b08a0;
-      top: -100px; right: 10%;
-    }
-    .glow-2 {
-      width: 300px; height: 300px;
-      background: #0062ff;
-      bottom: -50px; right: 20%;
-    }
+    .glow-1 { width: 480px; height: 480px; background: #2b08a0; top: -80px;  right: 8%; }
+    .glow-2 { width: 280px; height: 280px; background: #0062ff; bottom: -40px; right: 18%; }
+    .panel-left .glow-1 { right: auto; left: 8%; }
+    .panel-left .glow-2 { right: auto; left: 18%; }
 
-    /* ─── Content ─── */
+    /* ══════════════════════════════════
+       CONTENT LAYOUT
+    ══════════════════════════════════ */
     .content {
       position: relative;
       z-index: 2;
       width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
+      /* panel-right default */
       justify-content: flex-end;
       padding: 0 5vw;
     }
+    .panel-left .content { justify-content: flex-start; }
 
+    /* ── Text panel ── */
     .panel {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
-      gap: clamp(12px, 2vh, 24px);
-      max-width: min(520px, 48vw);
+      align-items: center;          /* centre all elements horizontally */
+      gap: clamp(10px, 1.8vh, 22px);
+      width: clamp(280px, 40vw, 520px);
     }
 
     /* ─── Logo ─── */
     .logo {
-      height: clamp(32px, 5vw, 56px);
+      height: clamp(28px, 4vw, 52px);
       width: auto;
       object-fit: contain;
     }
@@ -123,75 +133,67 @@
     /* ─── Title ─── */
     .title {
       font-family: 'Lalezar', sans-serif;
-      font-size: clamp(28px, 4.5vw, 64px);
+      font-size: clamp(24px, 3.8vw, 58px);
       line-height: 1.15;
       color: #fff;
-      text-align: right;
-      text-shadow: 0 2px 20px rgba(0,0,0,0.6);
+      text-align: center;
+      text-shadow: 0 2px 24px rgba(0,0,0,0.7);
+      width: 100%;
     }
 
-    /* ─── Promo block ─── */
+    /* ─── Subtitle ─── */
     .promo-label {
       font-family: 'Lalezar', sans-serif;
-      font-size: clamp(13px, 1.4vw, 18px);
+      font-size: clamp(13px, 1.3vw, 17px);
       color: #c0b8ff;
-      text-align: right;
-      letter-spacing: 0.02em;
+      text-align: center;
+      letter-spacing: 0.04em;
+      width: 100%;
     }
 
+    /* ─── Promo code box ─── */
     .promo-box {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 10px;
-      background: rgba(255,255,255,0.96);
+      background: rgba(255,255,255,0.97);
       border: 2px solid #8b5cf6;
       border-radius: 50px;
-      padding: clamp(8px, 1.2vw, 14px) clamp(16px, 2vw, 28px);
-      box-shadow: 0 0 24px rgba(139, 92, 246, 0.45), 0 4px 12px rgba(0,0,0,0.3);
+      padding: clamp(8px,1.2vw,14px) clamp(16px,2vw,28px);
+      box-shadow: 0 0 22px rgba(139,92,246,0.45), 0 4px 12px rgba(0,0,0,0.3);
       cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
     }
-
     .promo-box:hover {
       transform: translateY(-2px);
-      box-shadow: 0 0 32px rgba(139, 92, 246, 0.65), 0 6px 18px rgba(0,0,0,0.35);
+      box-shadow: 0 0 32px rgba(139,92,246,0.65), 0 6px 18px rgba(0,0,0,0.35);
     }
-
     .promo-code {
       font-family: 'Saira', sans-serif;
       font-weight: 800;
-      font-size: clamp(20px, 2.8vw, 38px);
+      font-size: clamp(18px, 2.4vw, 36px);
       color: #1a1a2e;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       user-select: all;
     }
-
     .copy-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: clamp(28px, 2.5vw, 38px);
-      height: clamp(28px, 2.5vw, 38px);
+      display: flex; align-items: center; justify-content: center;
+      width: clamp(26px,2.2vw,36px);
+      height: clamp(26px,2.2vw,36px);
       background: #f0ecff;
       border-radius: 8px;
       flex-shrink: 0;
       transition: background 0.15s;
     }
-
-    .copy-icon svg {
-      width: 55%;
-      height: 55%;
-    }
-
+    .copy-icon svg { width: 55%; height: 55%; }
     .promo-box:hover .copy-icon { background: #e0d8ff; }
 
+    /* ─── Copy toast ─── */
     .copy-toast {
       position: fixed;
-      bottom: 24px;
-      left: 50%;
+      bottom: 24px; left: 50%;
       transform: translateX(-50%) translateY(60px);
-      background: #22c55e;
-      color: #fff;
+      background: #22c55e; color: #fff;
       font-family: 'Lalezar', sans-serif;
       font-size: 16px;
       padding: 10px 24px;
@@ -201,107 +203,104 @@
       pointer-events: none;
       z-index: 100;
     }
+    .copy-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    .copy-toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    /* ─── CTA Button ─── */
+    /* ─── CTA button ─── */
     .cta-wrapper {
       display: flex;
       align-items: center;
-      gap: clamp(8px, 1vw, 14px);
+      gap: clamp(6px, 0.8vw, 12px);
     }
-
     .cta-arrow {
-      display: flex;
-      align-items: center;
       color: #22c55e;
-      font-size: clamp(18px, 2vw, 28px);
+      font-size: clamp(16px, 1.8vw, 26px);
       filter: drop-shadow(0 0 6px #22c55e);
       animation: arrowPulse 1.2s ease-in-out infinite alternate;
     }
-
-    .cta-arrow.left  { animation-delay: 0.1s; }
-    .cta-arrow.right { animation-delay: 0.3s; }
-
+    .cta-arrow.r { animation-delay: 0.2s; }
     @keyframes arrowPulse {
-      from { opacity: 0.5; transform: scale(0.92); }
-      to   { opacity: 1;   transform: scale(1.08); }
+      from { opacity: 0.45; transform: scale(0.9); }
+      to   { opacity: 1;    transform: scale(1.1); }
     }
-
     .cta-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #16a34a 100%);
-      background-size: 200% 200%;
+      background: linear-gradient(135deg, #15803d 0%, #22c55e 50%, #15803d 100%);
       color: #fff;
       font-family: 'Lalezar', sans-serif;
-      font-size: clamp(18px, 2.2vw, 30px);
+      font-size: clamp(16px, 2vw, 28px);
       text-decoration: none;
       border-radius: 50px;
-      padding: clamp(12px, 1.5vw, 18px) clamp(32px, 4vw, 64px);
-      box-shadow: 0 4px 24px rgba(34, 197, 94, 0.5), 0 2px 8px rgba(0,0,0,0.3);
+      padding: clamp(11px,1.4vw,17px) clamp(28px,3.5vw,58px);
+      box-shadow: 0 4px 24px rgba(34,197,94,0.5);
       transition: transform 0.15s, box-shadow 0.15s;
       animation: btnGlow 2s ease-in-out infinite alternate;
       white-space: nowrap;
     }
-
     .cta-btn:hover {
       transform: translateY(-3px) scale(1.03);
-      box-shadow: 0 8px 32px rgba(34, 197, 94, 0.65), 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 32px rgba(34,197,94,0.65);
     }
-
     @keyframes btnGlow {
-      from { box-shadow: 0 4px 24px rgba(34, 197, 94, 0.4), 0 2px 8px rgba(0,0,0,0.3); }
-      to   { box-shadow: 0 4px 36px rgba(34, 197, 94, 0.7), 0 2px 8px rgba(0,0,0,0.3); }
+      from { box-shadow: 0 4px 24px rgba(34,197,94,0.4); }
+      to   { box-shadow: 0 4px 36px rgba(34,197,94,0.7); }
     }
 
-    /* ─── Responsive: portrait / small ─── */
-    @media (max-width: 768px) {
-      html, body { overflow: auto; }
-
+    /* ══════════════════════════════════
+       MOBILE — portrait ≤ 700px
+       Panel overlays the BOTTOM of the
+       full-screen background image.
+    ══════════════════════════════════ */
+    @media (max-width: 700px) {
       .main {
-        height: auto;
-        min-height: 100vh;
-        flex-direction: column;
-        justify-content: flex-end;
+        /* anchor panel to bottom, image bleeds through above */
+        align-items: flex-end;
+        justify-content: center;
       }
 
-      .bg { position: fixed; }
-
-      .bg-overlay {
+      /* Mobile gradient: transparent top → dark bottom */
+      .bg-overlay,
+      .panel-left .bg-overlay {
         background: linear-gradient(
-          to top,
-          rgba(2, 0, 20, 0.98) 0%,
-          rgba(2, 0, 20, 0.85) 40%,
-          rgba(2, 0, 20, 0.4)  70%,
-          rgba(2, 0, 20, 0.1)  100%
+          to bottom,
+          rgba(2,0,20,0.00)  0%,
+          rgba(2,0,20,0.15) 35%,
+          rgba(2,0,20,0.80) 58%,
+          rgba(2,0,20,0.97) 75%,
+          rgba(2,0,20,1.00) 100%
         );
       }
 
-      .content {
+      .content,
+      .panel-left .content {
         justify-content: center;
-        padding: 40px 5vw 48px;
+        align-items: flex-end;
+        padding: 0 20px 44px;
       }
 
       .panel {
+        width: 100%;
+        max-width: 380px;
         align-items: center;
-        max-width: 100%;
-        text-align: center;
+        gap: clamp(10px, 3vw, 18px);
       }
 
-      .title  { text-align: center; font-size: clamp(26px, 7vw, 42px); }
-      .promo-label { text-align: center; }
+      .title       { font-size: clamp(22px, 6.5vw, 36px); }
+      .promo-label { font-size: clamp(12px, 3.5vw, 15px); }
+      .promo-code  { font-size: clamp(18px, 5.5vw, 28px); }
+      .cta-btn     { font-size: clamp(16px, 5vw, 22px); }
+
+      /* Glows: position at bottom on mobile */
+      .glow-1 { top: auto; bottom: 40%; right: -60px; }
+      .glow-2 { bottom: 20%; right: 10px; }
     }
   </style>
 </head>
 <body>
-<div class="main {{HAS_IMAGE}}" id="main">
+<div class="main {{HAS_IMAGE}} {{PANEL_SIDE}}" id="main">
 
-  <!-- Background -->
+  <!-- ── Background ── -->
   <div class="bg">
     <div class="bg-img" style="--bg-url: url('{{BG_IMAGE_URL}}')"></div>
     <div class="bg-overlay"></div>
@@ -310,55 +309,24 @@
     <div class="glow glow-2"></div>
   </div>
 
-  <!-- UI Panel -->
+  <!-- ── UI Panel ── -->
   <div class="content">
     <div class="panel">
-
-      <!-- Logo -->
-      <img
-        class="logo"
-        src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/1xbet_logo.svg/320px-1xbet_logo.svg.png"
-        alt="1xBET"
-      />
-
-      <!-- Title -->
-      <h1 class="title">{{TITLE}}</h1>
-
-      <!-- Promo code -->
-      <p class="promo-label">{{SUBTITLE}}</p>
-
-      <div class="promo-box" onclick="copyPromo()" title="Copy promo code">
-        <span class="promo-code" id="promoCode">{{PROMO_CODE}}</span>
-        <span class="copy-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#5b21b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
-        </span>
-      </div>
-
-      <!-- CTA Button -->
-      <div class="cta-wrapper">
-        <span class="cta-arrow right" aria-hidden="true">&#9654;</span>
-        <a class="cta-btn" href="{{REDIRECT_URL}}" rel="noopener">{{CTA_TEXT}}</a>
-        <span class="cta-arrow left" aria-hidden="true">&#9654;</span>
-      </div>
-
+      {{ELEMENTS_HTML}}
     </div>
   </div>
 
 </div>
 
-<!-- Copy toast -->
-<div class="copy-toast" id="copyToast">Copied!</div>
+<div class="copy-toast" id="copyToast">Copied! ✓</div>
 
 <script>
   function copyPromo() {
     const code = document.getElementById('promoCode').textContent;
-    navigator.clipboard.writeText(code).then(function() {
+    navigator.clipboard.writeText(code).then(function () {
       const t = document.getElementById('copyToast');
       t.classList.add('show');
-      setTimeout(function() { t.classList.remove('show'); }, 1800);
+      setTimeout(function () { t.classList.remove('show'); }, 1800);
     });
   }
 </script>

@@ -96,7 +96,10 @@ router.get('/status', (req, res) => {
 
 router.post('/create', async (req, res) => {
   try {
-    const { title, subtitle, promo_code, redirect_url, cta_text, image_prompt } = req.body;
+    const {
+      title, subtitle, promo_code, redirect_url, cta_text,
+      image_prompt, panel_side, layer_order,
+    } = req.body;
     console.log(`[create] promo_code=${promo_code}`);
 
     if (!title || !promo_code || !redirect_url || !cta_text) {
@@ -109,14 +112,18 @@ router.post('/create', async (req, res) => {
       console.log(`[create] Slug collision — using ${slug}`);
     }
 
-    const hasPrompt = image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY;
+    const hasPrompt    = image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY;
     const image_status = hasPrompt ? 'pending' : 'none';
+    const pSide        = panel_side  || 'right';
+    const lOrder       = layer_order || 'logo,title,subtitle,promo,cta';
 
     const result = db.prepare(`
       INSERT OR IGNORE INTO landings
-        (slug, promo_code, redirect_url, cta_text, title, subtitle, image_prompt, image_filename, image_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, '', ?)
-    `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '', image_prompt || '', image_status);
+        (slug, promo_code, redirect_url, cta_text, title, subtitle,
+         image_prompt, image_filename, image_status, panel_side, layer_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?)
+    `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '',
+           image_prompt || '', image_status, pSide, lOrder);
 
     if (result.changes === 0) {
       console.warn(`[create] INSERT skipped — slug "${slug}" already exists`);
@@ -172,6 +179,15 @@ function imgStatusBadge(l) {
   }
 }
 
+const LAYER_LABELS = {
+  logo:     'LOGO',
+  title:    'СТРОКА 1',
+  subtitle: 'СТРОКА 2',
+  promo:    'ПРОМО КОД',
+  cta:      'КНОПКА CTA',
+};
+const DEFAULT_ORDER = 'logo,title,subtitle,promo,cta';
+
 function renderAdmin(landings, baseUrl) {
   const hasPending = landings.some(l => l.image_status === 'pending');
 
@@ -203,6 +219,13 @@ function renderAdmin(landings, baseUrl) {
     </tr>
   `).join('');
 
+  // Build layer chips for canvas in default order
+  const layerChips = DEFAULT_ORDER.split(',').map(k => `
+    <div class="sk-layer" data-layer="${k}" title="Drag to reorder">
+      <span class="sk-handle">⠿</span>
+      <span>${LAYER_LABELS[k]}</span>
+    </div>`).join('');
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -217,7 +240,35 @@ function renderAdmin(landings, baseUrl) {
       <h1 class="logo">Landing<br>Generator</h1>
 
       <form method="POST" action="/admin/create" id="createForm">
-        <h2>New Landing</h2>
+
+        <!-- ══ Layer Canvas Constructor ══ -->
+        <div class="sk-section">
+          <div class="sk-header">
+            <span class="sk-title">РАСПОЛОЖЕНИЕ СЛОЁВ</span>
+            <div class="sk-side-toggle">
+              <button type="button" class="sk-side-btn active" data-side="right">Панель справа</button>
+              <button type="button" class="sk-side-btn"        data-side="left" >Панель слева</button>
+            </div>
+          </div>
+
+          <div class="sk-canvas" id="skCanvas">
+            <!-- Image area -->
+            <div class="sk-image-area">
+              <span class="sk-img-icon">🖼</span>
+            </div>
+            <!-- Panel area with draggable layers -->
+            <div class="sk-panel-area" id="skPanelArea">
+              ${layerChips}
+            </div>
+          </div>
+          <p class="hint">Перетащите слои · позиции передаются в лендинг</p>
+
+          <input type="hidden" name="panel_side"  id="panelSideInput"  value="right">
+          <input type="hidden" name="layer_order" id="layerOrderInput" value="${DEFAULT_ORDER}">
+        </div>
+
+        <!-- ══ Text fields ══ -->
+        <h2>Контент</h2>
 
         <label>Title *
           <input name="title" placeholder="احصل على مكافأة 4000 درهم" required>
@@ -233,7 +284,8 @@ function renderAdmin(landings, baseUrl) {
         </label>
 
         <label>Redirect URL *
-          <input name="redirect_url" type="url" placeholder="https://1xbet.com/register?promo=RIFINO50" required>
+          <input name="redirect_url" type="url"
+                 placeholder="https://1xbet.com/register?promo=RIFINO50" required>
         </label>
 
         <label>CTA Button Text *
@@ -241,13 +293,13 @@ function renderAdmin(landings, baseUrl) {
         </label>
 
         <label>Image Prompt (OpenAI)
-          <textarea name="image_prompt" rows="4"
-            placeholder="football player kicking ball, dramatic stadium lights, blue purple cinematic atmosphere, photorealistic, 8k"></textarea>
-          <span class="hint">Published instantly — image generates in background (~2–3 min)</span>
+          <textarea name="image_prompt" rows="3"
+            placeholder="football player kicking ball, dramatic stadium lights, blue purple cinematic, photorealistic, 8k"></textarea>
+          <span class="hint">Публикуется сразу · изображение генерируется в фоне (~2 мин)</span>
         </label>
 
         <button type="submit" class="btn-create" id="submitBtn">
-          Publish Landing
+          Опубликовать лендинг
         </button>
       </form>
     </aside>
@@ -280,6 +332,7 @@ function renderAdmin(landings, baseUrl) {
     </main>
   </div>
 
+  <script src="/public/canvas.js"></script>
   <script>
     // Poll for pending images and reload when they're done
     (function poll() {
