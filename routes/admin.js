@@ -310,22 +310,21 @@ function renderAdmin(landings, baseUrl) {
           <input name="cta_text" placeholder="سجل الان" required>
         </label>
 
-        <label>Акцентный цвет
-          <!-- Native picker — hidden, triggered only by the custom swatch button -->
-          <input type="color" name="accent_color" id="accentColorInput" value="#6c47ff"
-                 style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;tabindex:-1">
-          <div class="color-swatches">
-            <span class="color-swatch active" data-color="#6c47ff" style="background:#6c47ff" title="Фиолетовый"></span>
-            <span class="color-swatch" data-color="#e63946" style="background:#e63946" title="Красный"></span>
-            <span class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Золотой"></span>
-            <span class="color-swatch" data-color="#10b981" style="background:#10b981" title="Зелёный"></span>
-            <span class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Синий"></span>
-            <span class="color-swatch" data-color="#f97316" style="background:#f97316" title="Оранжевый"></span>
-            <span class="color-swatch color-swatch-custom" id="customColorSwatch" title="Свой цвет"></span>
-          </div>
-          <span class="color-hex" id="accentHex">#6c47ff</span>
-          <span class="hint">Цвет акцента передаётся в промпт и все UI-элементы лендинга</span>
-        </label>
+        <!-- input OUTSIDE label so label click doesn't auto-open color picker -->
+        <input type="color" name="accent_color" id="accentColorInput" value="#6c47ff"
+               style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
+        <div class="label-text">Акцентный цвет</div>
+        <div class="color-swatches">
+          <span class="color-swatch active" data-color="#6c47ff" style="background:#6c47ff" title="Фиолетовый"></span>
+          <span class="color-swatch" data-color="#e63946" style="background:#e63946" title="Красный"></span>
+          <span class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Золотой"></span>
+          <span class="color-swatch" data-color="#10b981" style="background:#10b981" title="Зелёный"></span>
+          <span class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Синий"></span>
+          <span class="color-swatch" data-color="#f97316" style="background:#f97316" title="Оранжевый"></span>
+          <span class="color-swatch color-swatch-custom" id="customColorSwatch" title="Свой цвет"></span>
+        </div>
+        <span class="color-hex" id="accentHex">#6C47FF</span>
+        <p class="hint" style="margin-bottom:14px">Цвет акцента передаётся в промпт и все UI-элементы лендинга</p>
 
         <label>Сцена для изображения
           <textarea name="image_prompt" rows="3"
