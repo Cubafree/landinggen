@@ -106,8 +106,10 @@
 
       if (btn.dataset.side === 'left') {
         canvas.insertBefore(panel, imageArea);    // panel first = left
+        canvas.classList.add('panel-left');
       } else {
         canvas.insertBefore(imageArea, panel);    // image first = left, panel = right
+        canvas.classList.remove('panel-left');
       }
     });
   });
