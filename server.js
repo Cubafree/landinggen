@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const basicAuth = require('express-basic-auth');
 const path = require('path');
+const { UPLOADS_DIR } = require('./paths');
 
 require('./db');
 
@@ -14,7 +15,12 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Serve generated images from the persistent data volume
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Health check — Railway uses this to confirm the app is up
+app.get('/healthz', (_req, res) => res.json({ status: 'ok' }));
 
 app.use('/admin', basicAuth({
   users: { [process.env.ADMIN_USER || 'admin']: process.env.ADMIN_PASS || 'changeme123' },

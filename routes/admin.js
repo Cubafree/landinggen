@@ -5,6 +5,7 @@ const fs = require('fs');
 const axios = require('axios');
 const { OpenAI } = require('openai');
 const db = require('../db');
+const { UPLOADS_DIR } = require('../paths');
 
 let _openai = null;
 function getOpenAI() {
@@ -40,7 +41,7 @@ async function generateImage(prompt) {
   const image = response.data[0];
 
   const filename = `bg_${Date.now()}.png`;
-  const filepath = path.join(__dirname, '..', 'uploads', filename);
+  const filepath = path.join(UPLOADS_DIR, filename);
 
   if (isGptImage && image.b64_json) {
     const buffer = Buffer.from(image.b64_json, 'base64');
@@ -100,7 +101,7 @@ router.post('/toggle/:id', (req, res) => {
 router.post('/delete/:id', (req, res) => {
   const landing = db.prepare('SELECT image_filename FROM landings WHERE id = ?').get(req.params.id);
   if (landing && landing.image_filename) {
-    const fp = path.join(__dirname, '..', 'uploads', landing.image_filename);
+    const fp = path.join(UPLOADS_DIR, landing.image_filename);
     if (fs.existsSync(fp)) fs.unlinkSync(fp);
   }
   db.prepare('DELETE FROM landings WHERE id = ?').run(req.params.id);

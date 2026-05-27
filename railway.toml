@@ -1,0 +1,12 @@
+[build]
+# Use the Dockerfile for the build so better-sqlite3 compiles correctly
+builder = "dockerfile"
+
+[deploy]
+startCommand = "node server.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+# Railway calls this to decide whether the deploy succeeded
+healthcheckPath = "/healthz"
+healthcheckTimeout = 30

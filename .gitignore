@@ -1,5 +1,10 @@
 node_modules/
 .env
+
+# Local data directory (SQLite DB + generated images)
+data/
+
+# Legacy paths — covered by data/ above, but keep for safety
 landings.db
 uploads/*.webp
 uploads/*.png
