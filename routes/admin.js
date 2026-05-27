@@ -21,39 +21,42 @@ function slugify(text) {
 
 async function generateImage(prompt) {
   const model = process.env.OPENAI_IMAGE_MODEL || 'dall-e-3';
-
-  // gpt-image-1 and gpt-image-2 use base64 and don't accept response_format.
-  // dall-e-2 and dall-e-3 return a temporary URL.
   const isGptImage = model.startsWith('gpt-image-');
 
   const params = {
     model,
     prompt,
     n: 1,
-    // gpt-image-*: 1536x1024 landscape, dall-e-3: 1792x1024
     size: isGptImage ? '1536x1024' : '1792x1024',
-    // gpt-image-*: low/medium/high/auto  |  dall-e-3: standard/hd
     quality: isGptImage ? 'high' : 'hd',
   };
 
   if (!isGptImage) {
-    // Only dall-e-* support response_format
     params.response_format = 'url';
   }
 
-  const response = await getOpenAI().images.generate(params);
-  const image = response.data[0];
+  console.log(`[img] Requesting image — model=${model} size=${params.size} quality=${params.quality}`);
+  console.log(`[img] Prompt: ${prompt.slice(0, 120)}${prompt.length > 120 ? '…' : ''}`);
 
+  const t0 = Date.now();
+  const response = await getOpenAI().images.generate(params);
+  console.log(`[img] OpenAI responded in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+
+  const image = response.data[0];
   const filename = `bg_${Date.now()}.png`;
   const filepath = path.join(UPLOADS_DIR, filename);
 
   if (image.b64_json) {
-    // gpt-image-* always returns base64
-    fs.writeFileSync(filepath, Buffer.from(image.b64_json, 'base64'));
+    const buf = Buffer.from(image.b64_json, 'base64');
+    fs.writeFileSync(filepath, buf);
+    console.log(`[img] Saved base64 image → ${filepath} (${(buf.length / 1024).toFixed(0)} KB)`);
   } else if (image.url) {
-    // dall-e-* returns a temporary URL — download it
+    console.log(`[img] Downloading image from URL…`);
     const res = await axios.get(image.url, { responseType: 'arraybuffer' });
     fs.writeFileSync(filepath, res.data);
+    console.log(`[img] Downloaded and saved → ${filepath} (${(res.data.byteLength / 1024).toFixed(0)} KB)`);
+  } else {
+    throw new Error('OpenAI returned neither b64_json nor url — check model/params');
   }
 
   return filename;
@@ -71,7 +74,10 @@ router.get('/', (req, res) => {
 router.post('/create', async (req, res) => {
   const { title, subtitle, promo_code, redirect_url, cta_text, image_prompt } = req.body;
 
+  console.log(`[create] New landing request — promo_code=${promo_code}`);
+
   if (!title || !promo_code || !redirect_url || !cta_text) {
+    console.warn('[create] Missing required fields', { title: !!title, promo_code: !!promo_code, redirect_url: !!redirect_url, cta_text: !!cta_text });
     return res.status(400).send('Missing required fields');
   }
 
@@ -79,15 +85,26 @@ router.post('/create', async (req, res) => {
   const existing = db.prepare('SELECT id FROM landings WHERE slug = ?').get(slug);
   if (existing) {
     slug = `${slug}-${Date.now()}`;
+    console.log(`[create] Slug collision — using ${slug}`);
   }
+  console.log(`[create] Slug: ${slug}`);
 
   let image_filename = '';
-  if (image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY) {
-    try {
-      image_filename = await generateImage(image_prompt.trim());
-    } catch (err) {
-      console.error('Image generation failed:', err.message);
+  if (image_prompt && image_prompt.trim()) {
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('[create] OPENAI_API_KEY is not set — skipping image generation');
+    } else {
+      console.log('[create] Starting image generation…');
+      try {
+        image_filename = await generateImage(image_prompt.trim());
+        console.log(`[create] Image ready: ${image_filename}`);
+      } catch (err) {
+        console.error('[create] Image generation failed:');
+        console.error(err);
+      }
     }
+  } else {
+    console.log('[create] No image prompt — landing will use gradient background');
   }
 
   db.prepare(`
@@ -95,6 +112,7 @@ router.post('/create', async (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '', image_prompt || '', image_filename);
 
+  console.log(`[create] Landing saved → /${slug}`);
   res.redirect('/admin');
 });
 
