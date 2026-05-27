@@ -41,7 +41,7 @@ Glowing neon particle streams and light trails in ${accentColor} tones radiating
 Electric energy sparks, motion blur on fast-moving elements, bokeh crowd in background.
 Atmospheric depth of field, volumetric light rays cutting through stadium haze.
 Rich Hollywood colour grading — deep shadows, vibrant midtones, high contrast.
-The right 35–40 % of the frame intentionally fades to near-black so text can overlay it.
+The right 20–25% of the frame softly fades into a deep ${accentColor}-tinted atmosphere — preserve colour richness, do not go pure black.
 Photorealistic, Canon EOS R5 85 mm f/1.4 aesthetic, no text, no logos, no watermarks.
 `.trim();
 }
