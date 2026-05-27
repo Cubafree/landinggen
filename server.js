@@ -4,6 +4,14 @@ const basicAuth = require('express-basic-auth');
 const path = require('path');
 const { UPLOADS_DIR } = require('./paths');
 
+// Keep the process alive on unhandled async errors — log and continue
+process.on('unhandledRejection', (reason) => {
+  console.error('[process] Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[process] Uncaught exception:', err);
+});
+
 require('./db');
 
 const adminRouter = require('./routes/admin');

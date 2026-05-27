@@ -72,48 +72,68 @@ router.get('/', (req, res) => {
 });
 
 router.post('/create', async (req, res) => {
-  const { title, subtitle, promo_code, redirect_url, cta_text, image_prompt } = req.body;
+  try {
+    const { title, subtitle, promo_code, redirect_url, cta_text, image_prompt } = req.body;
 
-  console.log(`[create] New landing request — promo_code=${promo_code}`);
+    console.log(`[create] New landing request — promo_code=${promo_code}`);
 
-  if (!title || !promo_code || !redirect_url || !cta_text) {
-    console.warn('[create] Missing required fields', { title: !!title, promo_code: !!promo_code, redirect_url: !!redirect_url, cta_text: !!cta_text });
-    return res.status(400).send('Missing required fields');
-  }
-
-  let slug = slugify(promo_code);
-  const existing = db.prepare('SELECT id FROM landings WHERE slug = ?').get(slug);
-  if (existing) {
-    slug = `${slug}-${Date.now()}`;
-    console.log(`[create] Slug collision — using ${slug}`);
-  }
-  console.log(`[create] Slug: ${slug}`);
-
-  let image_filename = '';
-  if (image_prompt && image_prompt.trim()) {
-    if (!process.env.OPENAI_API_KEY) {
-      console.warn('[create] OPENAI_API_KEY is not set — skipping image generation');
-    } else {
-      console.log('[create] Starting image generation…');
-      try {
-        image_filename = await generateImage(image_prompt.trim());
-        console.log(`[create] Image ready: ${image_filename}`);
-      } catch (err) {
-        console.error('[create] Image generation failed:');
-        console.error(err);
-      }
+    if (!title || !promo_code || !redirect_url || !cta_text) {
+      console.warn('[create] Missing required fields', { title: !!title, promo_code: !!promo_code, redirect_url: !!redirect_url, cta_text: !!cta_text });
+      return res.status(400).send('Missing required fields');
     }
-  } else {
-    console.log('[create] No image prompt — landing will use gradient background');
+
+    // Build a unique slug — use INSERT OR IGNORE as the final safety net
+    let slug = slugify(promo_code);
+    const existing = db.prepare('SELECT id FROM landings WHERE slug = ?').get(slug);
+    if (existing) {
+      slug = `${slug}-${Date.now()}`;
+      console.log(`[create] Slug collision — using ${slug}`);
+    }
+    console.log(`[create] Slug: ${slug}`);
+
+    let image_filename = '';
+    if (image_prompt && image_prompt.trim()) {
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('[create] OPENAI_API_KEY is not set — skipping image generation');
+      } else {
+        console.log('[create] Starting image generation…');
+        try {
+          image_filename = await generateImage(image_prompt.trim());
+          console.log(`[create] Image ready: ${image_filename}`);
+        } catch (err) {
+          console.error('[create] Image generation failed:');
+          console.error(err);
+        }
+      }
+    } else {
+      console.log('[create] No image prompt — landing will use gradient background');
+    }
+
+    // INSERT OR IGNORE + explicit slug uniqueness: never crashes on duplicate
+    const result = db.prepare(`
+      INSERT OR IGNORE INTO landings
+        (slug, promo_code, redirect_url, cta_text, title, subtitle, image_prompt, image_filename)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '', image_prompt || '', image_filename);
+
+    if (result.changes === 0) {
+      // Extremely unlikely after the check above, but handle gracefully
+      console.warn(`[create] INSERT skipped — slug "${slug}" already exists`);
+    } else {
+      console.log(`[create] Landing saved → /${slug}`);
+    }
+
+    res.redirect('/admin');
+  } catch (err) {
+    // Catch-all: log the full error and return 500 instead of crashing the process
+    console.error('[create] Unhandled error in /create route:');
+    console.error(err);
+    res.status(500).send(`
+      <h2>Something went wrong</h2>
+      <pre>${err.message}</pre>
+      <p><a href="/admin">← Back to admin</a></p>
+    `);
   }
-
-  db.prepare(`
-    INSERT INTO landings (slug, promo_code, redirect_url, cta_text, title, subtitle, image_prompt, image_filename)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '', image_prompt || '', image_filename);
-
-  console.log(`[create] Landing saved → /${slug}`);
-  res.redirect('/admin');
 });
 
 router.post('/toggle/:id', (req, res) => {
