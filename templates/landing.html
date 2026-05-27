@@ -13,9 +13,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Saira:wght@700;800&display=swap" rel="stylesheet">
-  {{ACCENT_STYLE_BLOCK}}
   <style>
-    /* Fallback accent vars if template placeholder not replaced */
+    /* Base accent vars — overridden by {{ACCENT_STYLE_BLOCK}} injected AFTER this block */
     :root {
       --accent: #6c47ff;
       --accent-a06: rgba(108,71,255,0.06);
@@ -69,10 +68,10 @@
       inset: 0;
       background: linear-gradient(
         to left,
-        rgba(2,0,20,1.00)  0%,
-        rgba(2,0,20,0.95) 15%,
-        rgba(2,0,20,0.75) 38%,
-        rgba(2,0,20,0.20) 62%,
+        rgba(2,0,20,0.82)  0%,
+        rgba(2,0,20,0.72) 18%,
+        rgba(2,0,20,0.48) 40%,
+        rgba(2,0,20,0.12) 62%,
         rgba(2,0,20,0.00) 100%
       );
     }
@@ -80,10 +79,10 @@
     .panel-left .bg-overlay {
       background: linear-gradient(
         to right,
-        rgba(2,0,20,1.00)  0%,
-        rgba(2,0,20,0.95) 15%,
-        rgba(2,0,20,0.75) 38%,
-        rgba(2,0,20,0.20) 62%,
+        rgba(2,0,20,0.82)  0%,
+        rgba(2,0,20,0.72) 18%,
+        rgba(2,0,20,0.48) 40%,
+        rgba(2,0,20,0.12) 62%,
         rgba(2,0,20,0.00) 100%
       );
     }
@@ -349,6 +348,7 @@
       .promo-code { font-size: clamp(18px, 6vw, 26px); }
     }
   </style>
+  {{ACCENT_STYLE_BLOCK}}
 </head>
 <body>
 <div class="main {{HAS_IMAGE}} {{PANEL_SIDE}}" id="main">
