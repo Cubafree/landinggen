@@ -311,19 +311,19 @@ function renderAdmin(landings, baseUrl) {
         </label>
 
         <label>Акцентный цвет
-          <div class="color-row">
-            <input type="color" name="accent_color" id="accentColorInput" value="#6c47ff">
-            <span class="color-hex" id="accentHex">#6c47ff</span>
-          </div>
+          <!-- Native picker — hidden, triggered only by the custom swatch button -->
+          <input type="color" name="accent_color" id="accentColorInput" value="#6c47ff"
+                 style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;tabindex:-1">
           <div class="color-swatches">
-            <span class="color-swatch active" data-color="#6c47ff" style="background:#6c47ff" title="Purple"></span>
-            <span class="color-swatch" data-color="#e63946" style="background:#e63946" title="Red"></span>
-            <span class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Gold"></span>
-            <span class="color-swatch" data-color="#10b981" style="background:#10b981" title="Green"></span>
-            <span class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Blue"></span>
-            <span class="color-swatch" data-color="#f97316" style="background:#f97316" title="Orange"></span>
-            <span class="color-swatch" data-color="#ec4899" style="background:#ec4899" title="Pink"></span>
+            <span class="color-swatch active" data-color="#6c47ff" style="background:#6c47ff" title="Фиолетовый"></span>
+            <span class="color-swatch" data-color="#e63946" style="background:#e63946" title="Красный"></span>
+            <span class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Золотой"></span>
+            <span class="color-swatch" data-color="#10b981" style="background:#10b981" title="Зелёный"></span>
+            <span class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Синий"></span>
+            <span class="color-swatch" data-color="#f97316" style="background:#f97316" title="Оранжевый"></span>
+            <span class="color-swatch color-swatch-custom" id="customColorSwatch" title="Свой цвет"></span>
           </div>
+          <span class="color-hex" id="accentHex">#6c47ff</span>
           <span class="hint">Цвет акцента передаётся в промпт и все UI-элементы лендинга</span>
         </label>
 
@@ -394,27 +394,37 @@ function renderAdmin(landings, baseUrl) {
   <script>
     // ── Accent color picker ───────────────────────────────────────────────────
     (function() {
-      const input    = document.getElementById('accentColorInput');
-      const hexLabel = document.getElementById('accentHex');
-      const swatches = document.querySelectorAll('.color-swatch');
+      const input        = document.getElementById('accentColorInput');
+      const hexLabel     = document.getElementById('accentHex');
+      const presets      = document.querySelectorAll('.color-swatch:not(.color-swatch-custom)');
+      const customSwatch = document.getElementById('customColorSwatch');
 
-      function applyAccent(color) {
-        input.value        = color;
-        hexLabel.textContent = color;
+      function applyAccent(color, isCustom) {
+        input.value          = color;
+        hexLabel.textContent = color.toUpperCase();
         hexLabel.style.color = color;
-        // Live-update canvas promo chip border
-        document.querySelectorAll('.sk-layer-promo').forEach(el => {
-          el.style.borderColor = color;
-        });
-        // Live-update canvas CTA chip background
-        document.querySelectorAll('.sk-layer-cta').forEach(el => {
-          el.style.background = color;
-        });
-        swatches.forEach(s => s.classList.toggle('active', s.dataset.color === color));
+        // Live-update canvas chips
+        document.querySelectorAll('.sk-layer-promo').forEach(el => el.style.borderColor = color);
+        document.querySelectorAll('.sk-layer-cta').forEach(el => el.style.background = color);
+        // Active state
+        presets.forEach(s => s.classList.toggle('active', !isCustom && s.dataset.color === color));
+        if (isCustom) {
+          customSwatch.classList.add('active');
+          customSwatch.style.background = color;
+        } else {
+          customSwatch.classList.remove('active');
+          customSwatch.style.background = ''; // restore rainbow gradient
+        }
       }
 
-      input.addEventListener('input', e => applyAccent(e.target.value));
-      swatches.forEach(s => s.addEventListener('click', () => applyAccent(s.dataset.color)));
+      // Preset swatches
+      presets.forEach(s => s.addEventListener('click', () => applyAccent(s.dataset.color, false)));
+
+      // Custom swatch → open native OS picker
+      customSwatch.addEventListener('click', () => input.click());
+
+      // Native picker value change → apply as custom color
+      input.addEventListener('input', e => applyAccent(e.target.value, true));
     })();
 
     // ── Poll for pending images ───────────────────────────────────────────────
