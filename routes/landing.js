@@ -40,7 +40,7 @@ function buildElements(landing) {
 
     cta: `
       <div class="cta-wrapper">
-        <span class="cta-arrow"    aria-hidden="true">&#9654;</span>
+        <span class="cta-arrow"    aria-hidden="true">&#9664;</span>
         <a class="cta-btn" href="${escHtml(landing.redirect_url)}" rel="noopener">
           ${escHtml(landing.cta_text)}
         </a>
