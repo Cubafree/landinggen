@@ -35,7 +35,7 @@ async function generateImage(prompt) {
     params.response_format = 'url';
   }
 
-  console.log(`[img] Requesting image — model=${model} size=${params.size} quality=${params.quality}`);
+  console.log(`[img] Requesting — model=${model} size=${params.size} quality=${params.quality}`);
   console.log(`[img] Prompt: ${prompt.slice(0, 120)}${prompt.length > 120 ? '…' : ''}`);
 
   const t0 = Date.now();
@@ -49,84 +49,94 @@ async function generateImage(prompt) {
   if (image.b64_json) {
     const buf = Buffer.from(image.b64_json, 'base64');
     fs.writeFileSync(filepath, buf);
-    console.log(`[img] Saved base64 image → ${filepath} (${(buf.length / 1024).toFixed(0)} KB)`);
+    console.log(`[img] Saved → ${filepath} (${(buf.length / 1024).toFixed(0)} KB)`);
   } else if (image.url) {
-    console.log(`[img] Downloading image from URL…`);
+    console.log(`[img] Downloading from URL…`);
     const res = await axios.get(image.url, { responseType: 'arraybuffer' });
     fs.writeFileSync(filepath, res.data);
-    console.log(`[img] Downloaded and saved → ${filepath} (${(res.data.byteLength / 1024).toFixed(0)} KB)`);
+    console.log(`[img] Downloaded → ${filepath} (${(res.data.byteLength / 1024).toFixed(0)} KB)`);
   } else {
-    throw new Error('OpenAI returned neither b64_json nor url — check model/params');
+    throw new Error('OpenAI returned neither b64_json nor url');
   }
 
   return filename;
 }
 
-router.get('/', (req, res) => {
-  const landings = db.prepare(
-    'SELECT * FROM landings ORDER BY created_at DESC'
-  ).all();
+/** Fire image generation in the background and update DB when done. */
+function generateImageBackground(landingId, slug, prompt) {
+  generateImage(prompt)
+    .then(filename => {
+      db.prepare(`
+        UPDATE landings SET image_filename = ?, image_status = 'ready' WHERE id = ?
+      `).run(filename, landingId);
+      console.log(`[bg] ✓ Image ready for /${slug}: ${filename}`);
+    })
+    .catch(err => {
+      db.prepare(`
+        UPDATE landings SET image_status = 'failed' WHERE id = ?
+      `).run(landingId);
+      console.error(`[bg] ✗ Image generation failed for /${slug}:`);
+      console.error(err);
+    });
+}
 
+// ─── Routes ──────────────────────────────────────────────────────────────────
+
+router.get('/', (req, res) => {
+  const landings = db.prepare('SELECT * FROM landings ORDER BY created_at DESC').all();
   const baseUrl = process.env.BASE_URL || `http://${req.headers.host}`;
   res.send(renderAdmin(landings, baseUrl));
+});
+
+// Lightweight polling endpoint — admin panel JS calls this every 5s
+router.get('/status', (req, res) => {
+  const pending = db.prepare(`SELECT COUNT(*) as n FROM landings WHERE image_status = 'pending'`).get().n;
+  res.json({ pending });
 });
 
 router.post('/create', async (req, res) => {
   try {
     const { title, subtitle, promo_code, redirect_url, cta_text, image_prompt } = req.body;
-
-    console.log(`[create] New landing request — promo_code=${promo_code}`);
+    console.log(`[create] promo_code=${promo_code}`);
 
     if (!title || !promo_code || !redirect_url || !cta_text) {
-      console.warn('[create] Missing required fields', { title: !!title, promo_code: !!promo_code, redirect_url: !!redirect_url, cta_text: !!cta_text });
       return res.status(400).send('Missing required fields');
     }
 
-    // Build a unique slug — use INSERT OR IGNORE as the final safety net
     let slug = slugify(promo_code);
-    const existing = db.prepare('SELECT id FROM landings WHERE slug = ?').get(slug);
-    if (existing) {
+    if (db.prepare('SELECT id FROM landings WHERE slug = ?').get(slug)) {
       slug = `${slug}-${Date.now()}`;
       console.log(`[create] Slug collision — using ${slug}`);
     }
-    console.log(`[create] Slug: ${slug}`);
 
-    let image_filename = '';
-    if (image_prompt && image_prompt.trim()) {
-      if (!process.env.OPENAI_API_KEY) {
-        console.warn('[create] OPENAI_API_KEY is not set — skipping image generation');
-      } else {
-        console.log('[create] Starting image generation…');
-        try {
-          image_filename = await generateImage(image_prompt.trim());
-          console.log(`[create] Image ready: ${image_filename}`);
-        } catch (err) {
-          console.error('[create] Image generation failed:');
-          console.error(err);
-        }
-      }
-    } else {
-      console.log('[create] No image prompt — landing will use gradient background');
-    }
+    const hasPrompt = image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY;
+    const image_status = hasPrompt ? 'pending' : 'none';
 
-    // INSERT OR IGNORE + explicit slug uniqueness: never crashes on duplicate
     const result = db.prepare(`
       INSERT OR IGNORE INTO landings
-        (slug, promo_code, redirect_url, cta_text, title, subtitle, image_prompt, image_filename)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '', image_prompt || '', image_filename);
+        (slug, promo_code, redirect_url, cta_text, title, subtitle, image_prompt, image_filename, image_status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, '', ?)
+    `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '', image_prompt || '', image_status);
 
     if (result.changes === 0) {
-      // Extremely unlikely after the check above, but handle gracefully
       console.warn(`[create] INSERT skipped — slug "${slug}" already exists`);
-    } else {
-      console.log(`[create] Landing saved → /${slug}`);
+      return res.redirect('/admin');
+    }
+
+    const landingId = result.lastInsertRowid;
+    console.log(`[create] Landing saved → /${slug} (id=${landingId}, image_status=${image_status})`);
+
+    if (hasPrompt) {
+      console.log(`[create] Image generation started in background`);
+      // Don't await — respond immediately, generate in background
+      generateImageBackground(landingId, slug, image_prompt.trim());
+    } else if (image_prompt && !process.env.OPENAI_API_KEY) {
+      console.warn('[create] OPENAI_API_KEY not set — skipping image generation');
     }
 
     res.redirect('/admin');
   } catch (err) {
-    // Catch-all: log the full error and return 500 instead of crashing the process
-    console.error('[create] Unhandled error in /create route:');
+    console.error('[create] Unhandled error:');
     console.error(err);
     res.status(500).send(`
       <h2>Something went wrong</h2>
@@ -151,21 +161,33 @@ router.post('/delete/:id', (req, res) => {
   res.redirect('/admin');
 });
 
+// ─── Admin HTML ───────────────────────────────────────────────────────────────
+
+function imgStatusBadge(l) {
+  switch (l.image_status) {
+    case 'pending': return `<span class="badge badge-pending">⏳ Generating…</span>`;
+    case 'ready':   return `<span class="badge badge-img-ready">🖼 Ready</span>`;
+    case 'failed':  return `<span class="badge badge-failed">❌ Failed</span>`;
+    default:        return `<span class="badge badge-none">— No image</span>`;
+  }
+}
+
 function renderAdmin(landings, baseUrl) {
+  const hasPending = landings.some(l => l.image_status === 'pending');
+
   const rows = landings.map(l => `
     <tr class="${l.active ? '' : 'inactive'}">
       <td>
-        <a href="${baseUrl}/${l.slug}" target="_blank" class="url-link">
-          /${l.slug}
-        </a>
+        <a href="${baseUrl}/${l.slug}" target="_blank" class="url-link">/${l.slug}</a>
       </td>
       <td class="mono">${escHtml(l.promo_code)}</td>
       <td>${escHtml(l.title)}</td>
       <td class="mono">${escHtml(l.cta_text)}</td>
+      <td>${imgStatusBadge(l)}</td>
       <td class="date">${l.created_at.slice(0, 16)}</td>
       <td>
         <span class="badge ${l.active ? 'badge-active' : 'badge-inactive'}">
-          ${l.active ? 'Active' : 'Inactive'}
+          ${l.active ? 'Active' : 'Off'}
         </span>
       </td>
       <td class="actions">
@@ -206,7 +228,7 @@ function renderAdmin(landings, baseUrl) {
         </label>
 
         <label>Promo Code *
-          <input name="promo_code" placeholder="RIFINO50" required style="text-transform:uppercase"
+          <input name="promo_code" placeholder="RIFINO50" required
                  oninput="this.value=this.value.toUpperCase()">
         </label>
 
@@ -221,12 +243,11 @@ function renderAdmin(landings, baseUrl) {
         <label>Image Prompt (OpenAI)
           <textarea name="image_prompt" rows="4"
             placeholder="football player kicking ball, dramatic stadium lights, blue purple cinematic atmosphere, photorealistic, 8k"></textarea>
-          <span class="hint">Leave empty to use a solid background</span>
+          <span class="hint">Published instantly — image generates in background (~2–3 min)</span>
         </label>
 
         <button type="submit" class="btn-create" id="submitBtn">
-          <span class="btn-text">Generate &amp; Publish</span>
-          <span class="btn-loading" hidden>Generating image…</span>
+          Publish Landing
         </button>
       </form>
     </aside>
@@ -234,6 +255,7 @@ function renderAdmin(landings, baseUrl) {
     <main class="content">
       <div class="content-header">
         <h2>Published Landings <span class="count">${landings.length}</span></h2>
+        ${hasPending ? `<span class="generating-note">⏳ Image generating… page auto-refreshes</span>` : ''}
       </div>
 
       ${landings.length === 0 ? '<div class="empty">No landings yet. Create your first one!</div>' : `
@@ -245,8 +267,9 @@ function renderAdmin(landings, baseUrl) {
               <th>Promo Code</th>
               <th>Title</th>
               <th>CTA</th>
+              <th>Image</th>
               <th>Created</th>
-              <th>Status</th>
+              <th>Active</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -258,12 +281,21 @@ function renderAdmin(landings, baseUrl) {
   </div>
 
   <script>
-    document.getElementById('createForm').addEventListener('submit', function() {
-      const btn = document.getElementById('submitBtn');
-      btn.querySelector('.btn-text').hidden = true;
-      btn.querySelector('.btn-loading').hidden = false;
-      btn.disabled = true;
-    });
+    // Poll for pending images and reload when they're done
+    (function poll() {
+      ${hasPending ? `
+      fetch('/admin/status')
+        .then(r => r.json())
+        .then(data => {
+          if (data.pending === 0) {
+            location.reload();
+          } else {
+            setTimeout(poll, 5000);
+          }
+        })
+        .catch(() => setTimeout(poll, 10000));
+      ` : '// No pending images'}
+    })();
   </script>
 </body>
 </html>`;
