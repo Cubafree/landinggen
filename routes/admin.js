@@ -106,7 +106,7 @@ router.post('/create', async (req, res) => {
   try {
     const {
       title, subtitle, promo_code, redirect_url, cta_text,
-      image_prompt, panel_side, layer_order,
+      image_prompt, panel_side, layer_order, accent_color,
     } = req.body;
     console.log(`[create] promo_code=${promo_code}`);
 
@@ -120,18 +120,24 @@ router.post('/create', async (req, res) => {
       console.log(`[create] Slug collision — using ${slug}`);
     }
 
-    const hasPrompt    = image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY;
-    const image_status = hasPrompt ? 'pending' : 'none';
-    const pSide        = panel_side  || 'right';
-    const lOrder       = layer_order || 'logo,title,subtitle,promo,cta';
+    const accentColor   = /^#[0-9a-f]{6}$/i.test(accent_color) ? accent_color : '#6c47ff';
+    const hasPrompt     = image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY;
+    const image_status  = hasPrompt ? 'pending' : 'none';
+    const pSide         = panel_side  || 'right';
+    const lOrder        = layer_order || 'logo,title,subtitle,promo,cta';
+
+    // Append accent color to image prompt so the generated image "rhymes" with the UI
+    const finalPrompt = hasPrompt
+      ? `${image_prompt.trim()}, dominant accent color: ${accentColor}, match this color in lighting and atmosphere`
+      : (image_prompt || '');
 
     const result = db.prepare(`
       INSERT OR IGNORE INTO landings
         (slug, promo_code, redirect_url, cta_text, title, subtitle,
-         image_prompt, image_filename, image_status, panel_side, layer_order)
-      VALUES (?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?)
+         image_prompt, image_filename, image_status, panel_side, layer_order, accent_color)
+      VALUES (?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, ?)
     `).run(slug, promo_code, redirect_url, cta_text, title, subtitle || '',
-           image_prompt || '', image_status, pSide, lOrder);
+           image_prompt || '', image_status, pSide, lOrder, accentColor);
 
     if (result.changes === 0) {
       console.warn(`[create] INSERT skipped — slug "${slug}" already exists`);
@@ -139,12 +145,12 @@ router.post('/create', async (req, res) => {
     }
 
     const landingId = result.lastInsertRowid;
-    console.log(`[create] Landing saved → /${slug} (id=${landingId}, image_status=${image_status})`);
+    console.log(`[create] Landing saved → /${slug} (id=${landingId}, accent=${accentColor}, image_status=${image_status})`);
 
     if (hasPrompt) {
       console.log(`[create] Image generation started in background`);
       // Don't await — respond immediately, generate in background
-      generateImageBackground(landingId, slug, image_prompt.trim());
+      generateImageBackground(landingId, slug, finalPrompt);
     } else if (image_prompt && !process.env.OPENAI_API_KEY) {
       console.warn('[create] OPENAI_API_KEY not set — skipping image generation');
     }
@@ -285,6 +291,23 @@ function renderAdmin(landings, baseUrl) {
           <input name="cta_text" placeholder="سجل الان" required>
         </label>
 
+        <label>Акцентный цвет
+          <div class="color-row">
+            <input type="color" name="accent_color" id="accentColorInput" value="#6c47ff">
+            <span class="color-hex" id="accentHex">#6c47ff</span>
+          </div>
+          <div class="color-swatches">
+            <span class="color-swatch active" data-color="#6c47ff" style="background:#6c47ff" title="Purple"></span>
+            <span class="color-swatch" data-color="#e63946" style="background:#e63946" title="Red"></span>
+            <span class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Gold"></span>
+            <span class="color-swatch" data-color="#10b981" style="background:#10b981" title="Green"></span>
+            <span class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Blue"></span>
+            <span class="color-swatch" data-color="#f97316" style="background:#f97316" title="Orange"></span>
+            <span class="color-swatch" data-color="#ec4899" style="background:#ec4899" title="Pink"></span>
+          </div>
+          <span class="hint">Цвет акцента передаётся в промпт и все UI-элементы лендинга</span>
+        </label>
+
         <label>Image Prompt (OpenAI)
           <textarea name="image_prompt" rows="4"
             placeholder="football player kicking ball, dramatic stadium lights, blue purple cinematic, photorealistic, 8k"></textarea>
@@ -350,7 +373,32 @@ function renderAdmin(landings, baseUrl) {
 
   <script src="/public/canvas.js"></script>
   <script>
-    // Poll for pending images and reload when they're done
+    // ── Accent color picker ───────────────────────────────────────────────────
+    (function() {
+      const input    = document.getElementById('accentColorInput');
+      const hexLabel = document.getElementById('accentHex');
+      const swatches = document.querySelectorAll('.color-swatch');
+
+      function applyAccent(color) {
+        input.value        = color;
+        hexLabel.textContent = color;
+        hexLabel.style.color = color;
+        // Live-update canvas promo chip border
+        document.querySelectorAll('.sk-layer-promo').forEach(el => {
+          el.style.borderColor = color;
+        });
+        // Live-update canvas CTA chip background
+        document.querySelectorAll('.sk-layer-cta').forEach(el => {
+          el.style.background = color;
+        });
+        swatches.forEach(s => s.classList.toggle('active', s.dataset.color === color));
+      }
+
+      input.addEventListener('input', e => applyAccent(e.target.value));
+      swatches.forEach(s => s.addEventListener('click', () => applyAccent(s.dataset.color)));
+    })();
+
+    // ── Poll for pending images ───────────────────────────────────────────────
     (function poll() {
       ${hasPending ? `
       fetch('/admin/status')

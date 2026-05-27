@@ -147,6 +147,56 @@ input::placeholder, textarea::placeholder {
   font-weight: 400;
 }
 
+/* ─── Color picker ─── */
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+input[type="color"] {
+  width: 44px;
+  height: 36px;
+  padding: 2px 3px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+
+.color-hex {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: color 0.15s;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.12s;
+  flex-shrink: 0;
+}
+
+.color-swatch:hover { transform: scale(1.18); }
+.color-swatch.active { border-color: #fff; transform: scale(1.15); }
+
 /* ─── Create button ─── */
 .btn-create {
   width: 100%;

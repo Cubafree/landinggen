@@ -12,4 +12,9 @@ const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 // Ensure directories exist on startup
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
+// Log paths so Railway logs show where data is stored
+console.log(`[paths] DATA_DIR  = ${DATA_DIR}${process.env.DATA_DIR ? '' : '  ⚠️  DATA_DIR not set — data will be lost on redeploy!'}`);
+console.log(`[paths] DB        = ${path.join(DATA_DIR, 'landings.db')}`);
+console.log(`[paths] UPLOADS   = ${UPLOADS_DIR}`);
+
 module.exports = { DATA_DIR, UPLOADS_DIR };

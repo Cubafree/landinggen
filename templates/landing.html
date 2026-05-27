@@ -13,7 +13,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Saira:wght@700;800&display=swap" rel="stylesheet">
+  {{ACCENT_STYLE_BLOCK}}
   <style>
+    /* Fallback accent vars if template placeholder not replaced */
+    :root {
+      --accent: #6c47ff;
+      --accent-a06: rgba(108,71,255,0.06);
+      --accent-a12: rgba(108,71,255,0.12);
+      --accent-a45: rgba(108,71,255,0.45);
+      --accent-a65: rgba(108,71,255,0.65);
+      --accent-dark: rgb(38,14,166);
+    }
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     /* ─── Full-screen base — never scrollable ─── */
@@ -93,8 +103,8 @@
       opacity: 0.3;
       pointer-events: none;
     }
-    .glow-1 { width: 480px; height: 480px; background: #2b08a0; top: -80px;  right: 8%; }
-    .glow-2 { width: 280px; height: 280px; background: #0062ff; bottom: -40px; right: 18%; }
+    .glow-1 { width: 480px; height: 480px; background: var(--accent-dark); top: -80px;  right: 8%; }
+    .glow-2 { width: 280px; height: 280px; background: var(--accent);     bottom: -40px; right: 18%; }
     .panel-left .glow-1 { right: auto; left: 8%; }
     .panel-left .glow-2 { right: auto; left: 18%; }
 
@@ -157,16 +167,16 @@
       align-items: center;
       gap: 10px;
       background: rgba(255,255,255,0.97);
-      border: 2px solid #8b5cf6;
+      border: 2px solid var(--accent);
       border-radius: 50px;
       padding: clamp(8px,1.2vw,14px) clamp(16px,2vw,28px);
-      box-shadow: 0 0 22px rgba(139,92,246,0.45), 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 0 22px var(--accent-a45), 0 4px 12px rgba(0,0,0,0.3);
       cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
     }
     .promo-box:hover {
       transform: translateY(-2px);
-      box-shadow: 0 0 32px rgba(139,92,246,0.65), 0 6px 18px rgba(0,0,0,0.35);
+      box-shadow: 0 0 32px var(--accent-a65), 0 6px 18px rgba(0,0,0,0.35);
     }
     .promo-code {
       font-family: 'Saira', sans-serif;
@@ -180,13 +190,14 @@
       display: flex; align-items: center; justify-content: center;
       width: clamp(26px,2.2vw,36px);
       height: clamp(26px,2.2vw,36px);
-      background: #f0ecff;
+      background: var(--accent-a06);
       border-radius: 8px;
       flex-shrink: 0;
       transition: background 0.15s;
+      color: var(--accent);
     }
     .copy-icon svg { width: 55%; height: 55%; }
-    .promo-box:hover .copy-icon { background: #e0d8ff; }
+    .promo-box:hover .copy-icon { background: var(--accent-a12); }
 
     /* ─── Copy toast ─── */
     .copy-toast {

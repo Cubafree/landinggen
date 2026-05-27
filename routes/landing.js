@@ -11,6 +11,34 @@ const template = fs.readFileSync(
 
 const LOGO_URL = '/public/logo.svg';
 
+/** Convert #rrggbb → { r, g, b } */
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  };
+}
+
+/** Generate CSS custom properties for the accent color and its opacity variants */
+function generateAccentVars(hex) {
+  const color = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#6c47ff';
+  const { r, g, b } = hexToRgb(color);
+  // Dark version for atmospheric glow blobs
+  const dr = Math.round(r * 0.35);
+  const dg = Math.round(g * 0.20);
+  const db_ = Math.round(b * 0.65);
+  return [
+    `--accent: ${color}`,
+    `--accent-a06: rgba(${r},${g},${b},0.06)`,
+    `--accent-a12: rgba(${r},${g},${b},0.12)`,
+    `--accent-a45: rgba(${r},${g},${b},0.45)`,
+    `--accent-a65: rgba(${r},${g},${b},0.65)`,
+    `--accent-dark: rgb(${dr},${dg},${db_})`,
+  ].join('; ');
+}
+
 /** Build ordered HTML elements for the landing panel. */
 function buildElements(landing) {
   const order = (landing.layer_order || 'logo,title,subtitle,promo,cta').split(',');
@@ -29,7 +57,7 @@ function buildElements(landing) {
     promo: `
       <div class="promo-box" onclick="copyPromo()" title="Copy promo code">
         <span class="copy-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#5b21b6" stroke-width="2"
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -67,16 +95,19 @@ router.get('/:slug', (req, res) => {
 
   if (!landing) return res.status(404).send('Not found');
 
-  const bgUrl      = landing.image_filename ? `/uploads/${landing.image_filename}` : '';
-  const panelSide  = landing.panel_side === 'left' ? 'panel-left' : 'panel-right';
+  const bgUrl        = landing.image_filename ? `/uploads/${landing.image_filename}` : '';
+  const panelSide    = landing.panel_side === 'left' ? 'panel-left' : 'panel-right';
   const elementsHtml = buildElements(landing);
+  const accentVars   = generateAccentVars(landing.accent_color);
+  const accentBlock  = `<style>:root{${accentVars}}</style>`;
 
   const html = template
-    .replace(/\{\{TITLE\}\}/g,        escHtml(landing.title))
-    .replace(/\{\{BG_IMAGE_URL\}\}/g, bgUrl)
-    .replace(/\{\{HAS_IMAGE\}\}/g,    bgUrl ? 'has-image' : 'no-image')
-    .replace(/\{\{PANEL_SIDE\}\}/g,   panelSide)
-    .replace(/\{\{ELEMENTS_HTML\}\}/g, elementsHtml);
+    .replace(/\{\{TITLE\}\}/g,           escHtml(landing.title))
+    .replace(/\{\{BG_IMAGE_URL\}\}/g,    bgUrl)
+    .replace(/\{\{HAS_IMAGE\}\}/g,       bgUrl ? 'has-image' : 'no-image')
+    .replace(/\{\{PANEL_SIDE\}\}/g,      panelSide)
+    .replace(/\{\{ELEMENTS_HTML\}\}/g,   elementsHtml)
+    .replace(/\{\{ACCENT_STYLE_BLOCK\}\}/g, accentBlock);
 
   res.send(html);
 });

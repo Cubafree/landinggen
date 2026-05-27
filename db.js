@@ -28,6 +28,7 @@ const migrations = [
   `ALTER TABLE landings ADD COLUMN image_status  TEXT DEFAULT 'none'`,
   `ALTER TABLE landings ADD COLUMN panel_side    TEXT DEFAULT 'right'`,
   `ALTER TABLE landings ADD COLUMN layer_order   TEXT DEFAULT 'logo,title,subtitle,promo,cta'`,
+  `ALTER TABLE landings ADD COLUMN accent_color  TEXT DEFAULT '#6c47ff'`,
 ];
 for (const sql of migrations) {
   try { db.exec(sql); } catch (_) { /* column already exists */ }
