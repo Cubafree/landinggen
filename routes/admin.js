@@ -179,11 +179,12 @@ function imgStatusBadge(l) {
   }
 }
 
+// Labels match the form field names exactly
 const LAYER_LABELS = {
-  logo:     'LOGO',
-  title:    'СТРОКА 1',
-  subtitle: 'СТРОКА 2',
-  promo:    'ПРОМО КОД',
+  logo:     'ЛОГОТИП',
+  title:    'ЗАГОЛОВОК',
+  subtitle: 'ПОДЗАГОЛОВОК',
+  promo:    'ПРОМОКОД',
   cta:      'КНОПКА CTA',
 };
 const DEFAULT_ORDER = 'logo,title,subtitle,promo,cta';
@@ -219,11 +220,17 @@ function renderAdmin(landings, baseUrl) {
     </tr>
   `).join('');
 
-  // Build layer chips for canvas in default order
+  // Each chip styled to look like the actual landing element it represents
+  const CHIP_INNER = {
+    logo:     `<span class="sk-handle">⠿</span><span class="sk-logo-chip">1XBET</span>`,
+    title:    `<span class="sk-handle">⠿</span><span>ЗАГОЛОВОК</span>`,
+    subtitle: `<span class="sk-handle">⠿</span><span>подзаголовок</span>`,
+    promo:    `<span class="sk-handle">⠿</span><span>ПРОМОКОД</span><span class="sk-copy-chip">⧉</span>`,
+    cta:      `<span class="sk-handle">⠿</span><span>▶ КНОПКА CTA ◀</span>`,
+  };
   const layerChips = DEFAULT_ORDER.split(',').map(k => `
-    <div class="sk-layer" data-layer="${k}" title="Drag to reorder">
-      <span class="sk-handle">⠿</span>
-      <span>${LAYER_LABELS[k]}</span>
+    <div class="sk-layer sk-layer-${k}" data-layer="${k}" title="${LAYER_LABELS[k]}">
+      ${CHIP_INNER[k]}
     </div>`).join('');
 
   return `<!DOCTYPE html>
@@ -248,15 +255,15 @@ function renderAdmin(landings, baseUrl) {
 
         <h2>Контент</h2>
 
-        <label>Title *
+        <label>Заголовок *
           <input name="title" placeholder="احصل على مكافأة 4000 درهم" required>
         </label>
 
-        <label>Subtitle
+        <label>Подзаголовок
           <input name="subtitle" placeholder="برموكود:">
         </label>
 
-        <label>Promo Code *
+        <label>Промокод *
           <input name="promo_code" placeholder="RIFINO50" required
                  oninput="this.value=this.value.toUpperCase()">
         </label>
@@ -266,7 +273,7 @@ function renderAdmin(landings, baseUrl) {
                  placeholder="https://1xbet.com/register?promo=RIFINO50" required>
         </label>
 
-        <label>CTA Button Text *
+        <label>Кнопка CTA *
           <input name="cta_text" placeholder="سجل الان" required>
         </label>
 

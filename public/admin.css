@@ -421,42 +421,106 @@ tr.inactive td { opacity: 0.45; }
   border-left: 1px solid rgba(108,71,255,0.25);
 }
 
-/* Layer chip — bigger since canvas is larger */
+/* ── Base chip ── */
 .sk-layer {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(108,71,255,0.18);
-  border: 1px solid rgba(108,71,255,0.4);
-  border-radius: 7px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: 7px 12px;
   font-size: 12px;
   font-weight: 700;
-  color: #c4bbff;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   cursor: grab;
   touch-action: none;
-  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+  transition: filter 0.12s, transform 0.1s;
   white-space: nowrap;
+  /* default fallback */
+  background: rgba(108,71,255,0.18);
+  border: 1px solid rgba(108,71,255,0.4);
+  color: #c4bbff;
 }
-.sk-layer:hover {
-  background: rgba(108,71,255,0.32);
-  transform: translateX(-2px);
-}
-.sk-layer.sk-dragging {
-  opacity: 0.4;
-  cursor: grabbing;
-  border-style: dashed;
-}
+.sk-layer:hover { filter: brightness(1.25); transform: translateX(-2px); }
+.sk-layer.sk-dragging { opacity: 0.4; cursor: grabbing; border-style: dashed; }
+
 .sk-placeholder {
-  border: 2px dashed rgba(108,71,255,0.45);
-  border-radius: 7px;
-  background: rgba(108,71,255,0.07);
+  border: 2px dashed rgba(108,71,255,0.4);
+  border-radius: 8px;
+  background: rgba(108,71,255,0.06);
   pointer-events: none;
 }
+
 .sk-handle {
-  color: rgba(108,71,255,0.65);
-  font-size: 16px;
+  color: rgba(255,255,255,0.3);
+  font-size: 15px;
   line-height: 1;
   flex-shrink: 0;
+}
+
+/* ── ЛОГОТИП: white badge look ── */
+.sk-layer-logo {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 11px;
+  justify-content: center;
+  padding: 5px 16px;
+}
+.sk-logo-chip {
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #fff;
+}
+
+/* ── ЗАГОЛОВОК: big bold text ── */
+.sk-layer-title {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  justify-content: center;
+  padding: 4px 8px;
+}
+.sk-layer-title .sk-handle { color: rgba(255,255,255,0.2); }
+.sk-layer-title:hover { transform: none; filter: none; }
+
+/* ── ПОДЗАГОЛОВОК: small muted ── */
+.sk-layer-subtitle {
+  background: transparent;
+  border: none;
+  color: #9088cc;
+  font-size: 10px;
+  font-weight: 600;
+  justify-content: center;
+  padding: 2px 8px;
+}
+.sk-layer-subtitle .sk-handle { color: rgba(144,136,204,0.3); }
+.sk-layer-subtitle:hover { transform: none; filter: none; }
+
+/* ── ПРОМОКОД: white pill with purple border ── */
+.sk-layer-promo {
+  background: rgba(255,255,255,0.92);
+  border: 2px solid #8b5cf6;
+  border-radius: 50px;
+  color: #1a0a3a;
+  justify-content: space-between;
+  padding: 6px 14px;
+}
+.sk-layer-promo .sk-handle { color: rgba(139,92,246,0.5); }
+.sk-copy-chip {
+  color: #8b5cf6;
+  font-size: 14px;
+}
+
+/* ── КНОПКА CTA: green pill ── */
+.sk-layer-cta {
+  background: #16a34a;
+  border: 1px solid #22c55e;
+  border-radius: 50px;
+  color: #fff;
+  justify-content: center;
+  padding: 8px 16px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
