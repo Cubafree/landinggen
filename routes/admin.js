@@ -21,19 +21,21 @@ function slugify(text) {
 
 async function generateImage(prompt) {
   const model = process.env.OPENAI_IMAGE_MODEL || 'dall-e-3';
-  const isGptImage = model === 'gpt-image-1';
+
+  // gpt-image-1 and gpt-image-2 use base64 and don't accept response_format.
+  // dall-e-2 and dall-e-3 return a temporary URL.
+  const isGptImage = model.startsWith('gpt-image-');
 
   const params = {
     model,
     prompt,
     n: 1,
     size: isGptImage ? '1536x1024' : '1792x1024',
+    quality: 'standard',
   };
 
-  if (isGptImage) {
-    params.quality = 'standard';
-  } else {
-    params.quality = 'standard';
+  if (!isGptImage) {
+    // Only dall-e-* support response_format
     params.response_format = 'url';
   }
 
@@ -43,10 +45,11 @@ async function generateImage(prompt) {
   const filename = `bg_${Date.now()}.png`;
   const filepath = path.join(UPLOADS_DIR, filename);
 
-  if (isGptImage && image.b64_json) {
-    const buffer = Buffer.from(image.b64_json, 'base64');
-    fs.writeFileSync(filepath, buffer);
+  if (image.b64_json) {
+    // gpt-image-* always returns base64
+    fs.writeFileSync(filepath, Buffer.from(image.b64_json, 'base64'));
   } else if (image.url) {
+    // dall-e-* returns a temporary URL — download it
     const res = await axios.get(image.url, { responseType: 'arraybuffer' });
     fs.writeFileSync(filepath, res.data);
   }
