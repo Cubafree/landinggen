@@ -236,38 +236,16 @@ function renderAdmin(landings, baseUrl) {
 </head>
 <body>
   <div class="layout">
+
+    <!-- ══ LEFT: form ══ -->
     <aside class="sidebar">
       <h1 class="logo">Landing<br>Generator</h1>
 
       <form method="POST" action="/admin/create" id="createForm">
+        <!-- Hidden inputs updated by canvas.js via element ID -->
+        <input type="hidden" name="panel_side"  id="panelSideInput"  value="right">
+        <input type="hidden" name="layer_order" id="layerOrderInput" value="${DEFAULT_ORDER}">
 
-        <!-- ══ Layer Canvas Constructor ══ -->
-        <div class="sk-section">
-          <div class="sk-header">
-            <span class="sk-title">РАСПОЛОЖЕНИЕ СЛОЁВ</span>
-            <div class="sk-side-toggle">
-              <button type="button" class="sk-side-btn active" data-side="right">Панель справа</button>
-              <button type="button" class="sk-side-btn"        data-side="left" >Панель слева</button>
-            </div>
-          </div>
-
-          <div class="sk-canvas" id="skCanvas">
-            <!-- Image area -->
-            <div class="sk-image-area">
-              <span class="sk-img-icon">🖼</span>
-            </div>
-            <!-- Panel area with draggable layers -->
-            <div class="sk-panel-area" id="skPanelArea">
-              ${layerChips}
-            </div>
-          </div>
-          <p class="hint">Перетащите слои · позиции передаются в лендинг</p>
-
-          <input type="hidden" name="panel_side"  id="panelSideInput"  value="right">
-          <input type="hidden" name="layer_order" id="layerOrderInput" value="${DEFAULT_ORDER}">
-        </div>
-
-        <!-- ══ Text fields ══ -->
         <h2>Контент</h2>
 
         <label>Title *
@@ -293,7 +271,7 @@ function renderAdmin(landings, baseUrl) {
         </label>
 
         <label>Image Prompt (OpenAI)
-          <textarea name="image_prompt" rows="3"
+          <textarea name="image_prompt" rows="4"
             placeholder="football player kicking ball, dramatic stadium lights, blue purple cinematic, photorealistic, 8k"></textarea>
           <span class="hint">Публикуется сразу · изображение генерируется в фоне (~2 мин)</span>
         </label>
@@ -304,31 +282,54 @@ function renderAdmin(landings, baseUrl) {
       </form>
     </aside>
 
+    <!-- ══ RIGHT: canvas top + history bottom ══ -->
     <main class="content">
-      <div class="content-header">
-        <h2>Published Landings <span class="count">${landings.length}</span></h2>
-        ${hasPending ? `<span class="generating-note">⏳ Image generating… page auto-refreshes</span>` : ''}
+
+      <!-- Layer constructor -->
+      <div class="canvas-panel">
+        <div class="canvas-panel-header">
+          <span class="canvas-panel-title">РАСПОЛОЖЕНИЕ СЛОЁВ</span>
+          <div class="sk-side-toggle">
+            <button type="button" class="sk-side-btn active" data-side="right">Панель справа</button>
+            <button type="button" class="sk-side-btn"        data-side="left" >Панель слева</button>
+          </div>
+        </div>
+
+        <div class="sk-canvas" id="skCanvas">
+          <div class="sk-image-area"><span class="sk-img-icon">🖼</span></div>
+          <div class="sk-panel-area" id="skPanelArea">${layerChips}</div>
+        </div>
+        <p class="hint" style="margin-top:8px">Перетащите слои · позиции передаются в лендинг</p>
       </div>
 
-      ${landings.length === 0 ? '<div class="empty">No landings yet. Create your first one!</div>' : `
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>URL</th>
-              <th>Promo Code</th>
-              <th>Title</th>
-              <th>CTA</th>
-              <th>Image</th>
-              <th>Created</th>
-              <th>Active</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+      <!-- Landings history -->
+      <div class="landings-panel">
+        <div class="content-header">
+          <h2>История генераций <span class="count">${landings.length}</span></h2>
+          ${hasPending ? `<span class="generating-note">⏳ Изображение генерируется…</span>` : ''}
+        </div>
+
+        ${landings.length === 0 ? '<div class="empty">Нет лендингов. Создайте первый!</div>' : `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>URL</th>
+                <th>Промокод</th>
+                <th>Заголовок</th>
+                <th>CTA</th>
+                <th>Изображение</th>
+                <th>Создан</th>
+                <th>Статус</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        `}
       </div>
-      `}
+
     </main>
   </div>
 
