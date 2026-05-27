@@ -483,6 +483,12 @@ tr.inactive td { opacity: 0.45; }
   justify-content: center;
   padding: 5px 16px;
 }
+.sk-logo-img {
+  height: 22px;
+  width: auto;
+  object-fit: contain;
+  pointer-events: none;
+}
 .sk-logo-chip {
   font-weight: 900;
   letter-spacing: 0.08em;

@@ -230,7 +230,7 @@ function renderAdmin(landings, baseUrl) {
 
   // Each chip styled to look like the actual landing element it represents
   const CHIP_INNER = {
-    logo:     `<span class="sk-handle">⠿</span><span class="sk-logo-chip">1XBET</span>`,
+    logo:     `<span class="sk-handle">⠿</span><img src="/public/logo.svg" class="sk-logo-img" alt="Logo">`,
     title:    `<span class="sk-handle">⠿</span><span>ЗАГОЛОВОК</span>`,
     subtitle: `<span class="sk-handle">⠿</span><span>подзаголовок</span>`,
     promo:    `<span class="sk-handle">⠿</span><span>ПРОМОКОД</span><span class="sk-copy-chip">⧉</span>`,
