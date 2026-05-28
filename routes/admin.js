@@ -133,17 +133,45 @@ router.post('/create', async (req, res) => {
       return res.status(400).send('Missing required fields');
     }
 
+    // Validate field lengths
+    if (title.length > 500 || (subtitle && subtitle.length > 500) ||
+        cta_text.length > 200 || redirect_url.length > 2000 ||
+        (image_prompt && image_prompt.length > 2000)) {
+      return res.status(400).send('One or more fields exceed maximum length');
+    }
+
+    // Validate redirect_url — only http/https allowed (no javascript:, data:, etc.)
+    try {
+      const u = new URL(redirect_url);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
+    } catch {
+      return res.status(400).send('redirect_url must be a valid http/https URL');
+    }
+
+    // Validate layer_order — only known layer keys
+    const VALID_LAYERS = new Set(['logo', 'title', 'subtitle', 'promo', 'cta']);
+    const sanitizedLayers = (layer_order || 'logo,title,subtitle,promo,cta')
+      .split(',').map(l => l.trim()).filter(l => VALID_LAYERS.has(l));
+    const lOrder = sanitizedLayers.length ? sanitizedLayers.join(',') : 'logo,title,subtitle,promo,cta';
+
+    // Rate-limit image generation — max 3 pending at once
+    if (image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY) {
+      const pending = db.prepare(`SELECT COUNT(*) as n FROM landings WHERE image_status = 'pending'`).get().n;
+      if (pending >= 3) {
+        return res.status(429).send('Too many images generating — wait for current ones to finish');
+      }
+    }
+
     let slug = slugify(promo_code);
     if (db.prepare('SELECT id FROM landings WHERE slug = ?').get(slug)) {
       slug = `${slug}-${Date.now()}`;
       console.log(`[create] Slug collision — using ${slug}`);
     }
 
-    const accentColor   = /^#[0-9a-f]{6}$/i.test(accent_color) ? accent_color : '#6c47ff';
-    const hasPrompt     = image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY;
-    const image_status  = hasPrompt ? 'pending' : 'none';
-    const pSide         = panel_side  || 'right';
-    const lOrder        = layer_order || 'logo,title,subtitle,promo,cta';
+    const accentColor  = /^#[0-9a-f]{6}$/i.test(accent_color) ? accent_color : '#6c47ff';
+    const hasPrompt    = image_prompt && image_prompt.trim() && process.env.OPENAI_API_KEY;
+    const image_status = hasPrompt ? 'pending' : 'none';
+    const pSide        = (panel_side === 'left') ? 'left' : 'right';
 
     // Build full cinematic prompt from user's short scene description
     const finalPrompt = hasPrompt
@@ -168,7 +196,6 @@ router.post('/create', async (req, res) => {
 
     if (hasPrompt) {
       console.log(`[create] Image generation started in background`);
-      // Don't await — respond immediately, generate in background
       generateImageBackground(landingId, slug, finalPrompt);
     } else if (image_prompt && !process.env.OPENAI_API_KEY) {
       console.warn('[create] OPENAI_API_KEY not set — skipping image generation');
@@ -176,12 +203,10 @@ router.post('/create', async (req, res) => {
 
     res.redirect('/admin');
   } catch (err) {
-    console.error('[create] Unhandled error:');
-    console.error(err);
-    res.status(500).send(`
-      <h2>Something went wrong</h2>
-      <pre>${err.message}</pre>
-      <p><a href="/admin">← Back to admin</a></p>
+    console.error('[create] Unhandled error:', err);
+    res.status(500).send(
+      `<h2>Something went wrong</h2><p><a href="/admin">← Back to admin</a></p>`
+    );
     `);
   }
 });
@@ -289,25 +314,25 @@ function renderAdmin(landings, baseUrl) {
         <h2>Контент</h2>
 
         <label>Заголовок *
-          <input name="title" placeholder="احصل على مكافأة 4000 درهم" required>
+          <input name="title" placeholder="احصل على مكافأة 4000 درهم" required maxlength="500">
         </label>
 
         <label>Подзаголовок
-          <input name="subtitle" placeholder="برموكود:">
+          <input name="subtitle" placeholder="برموكود:" maxlength="500">
         </label>
 
         <label>Промокод *
-          <input name="promo_code" placeholder="RIFINO50" required
+          <input name="promo_code" placeholder="RIFINO50" required maxlength="100"
                  oninput="this.value=this.value.toUpperCase()">
         </label>
 
         <label>Redirect URL *
           <input name="redirect_url" type="url"
-                 placeholder="https://1xbet.com/register?promo=RIFINO50" required>
+                 placeholder="https://1xbet.com/register?promo=RIFINO50" required maxlength="2000">
         </label>
 
         <label>Кнопка CTA *
-          <input name="cta_text" placeholder="سجل الان" required>
+          <input name="cta_text" placeholder="سجل الان" required maxlength="200">
         </label>
 
         <!-- input OUTSIDE label so label click doesn't auto-open color picker -->

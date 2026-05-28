@@ -95,7 +95,10 @@ router.get('/:slug', (req, res) => {
 
   if (!landing) return res.status(404).send('Not found');
 
-  const bgUrl        = landing.image_filename ? `/uploads/${landing.image_filename}` : '';
+  // Whitelist filename to prevent CSS injection via --bg-url
+  const safeFilename = /^[a-zA-Z0-9_.-]+$/.test(landing.image_filename || '')
+    ? landing.image_filename : '';
+  const bgUrl = safeFilename ? `/uploads/${safeFilename}` : '';
   const panelSide    = landing.panel_side === 'left' ? 'panel-left' : 'panel-right';
   const elementsHtml = buildElements(landing);
   const accentVars   = generateAccentVars(landing.accent_color);
