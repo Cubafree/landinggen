@@ -207,7 +207,6 @@ router.post('/create', async (req, res) => {
     res.status(500).send(
       `<h2>Something went wrong</h2><p><a href="/admin">← Back to admin</a></p>`
     );
-    `);
   }
 });
 
