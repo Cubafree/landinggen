@@ -238,11 +238,11 @@ function imgStatusBadge(l) {
 
 // Labels match the form field names exactly
 const LAYER_LABELS = {
-  logo:     'ЛОГОТИП',
-  title:    'ЗАГОЛОВОК',
-  subtitle: 'ПОДЗАГОЛОВОК',
-  promo:    'ПРОМОКОД',
-  cta:      'КНОПКА CTA',
+  logo:     'LOGO',
+  title:    'TITLE',
+  subtitle: 'SUBTITLE',
+  promo:    'PROMO CODE',
+  cta:      'CTA BUTTON',
 };
 const DEFAULT_ORDER = 'logo,title,subtitle,promo,cta';
 
@@ -280,10 +280,10 @@ function renderAdmin(landings, baseUrl) {
   // Each chip styled to look like the actual landing element it represents
   const CHIP_INNER = {
     logo:     `<span class="sk-handle">⠿</span><img src="/public/logo.svg" class="sk-logo-img" alt="Logo">`,
-    title:    `<span class="sk-handle">⠿</span><span>ЗАГОЛОВОК</span>`,
-    subtitle: `<span class="sk-handle">⠿</span><span>подзаголовок</span>`,
-    promo:    `<span class="sk-handle">⠿</span><span>ПРОМОКОД</span><span class="sk-copy-chip">⧉</span>`,
-    cta:      `<span class="sk-handle">⠿</span><span>▶ КНОПКА CTA ◀</span>`,
+    title:    `<span class="sk-handle">⠿</span><span>TITLE</span>`,
+    subtitle: `<span class="sk-handle">⠿</span><span>subtitle</span>`,
+    promo:    `<span class="sk-handle">⠿</span><span>PROMO CODE</span><span class="sk-copy-chip">⧉</span>`,
+    cta:      `<span class="sk-handle">⠿</span><span>▶ CTA BUTTON ◀</span>`,
   };
   const layerChips = DEFAULT_ORDER.split(',').map(k => `
     <div class="sk-layer sk-layer-${k}" data-layer="${k}" title="${LAYER_LABELS[k]}">
@@ -310,54 +310,54 @@ function renderAdmin(landings, baseUrl) {
         <input type="hidden" name="panel_side"  id="panelSideInput"  value="right">
         <input type="hidden" name="layer_order" id="layerOrderInput" value="${DEFAULT_ORDER}">
 
-        <h2>Контент</h2>
+        <h2>Content</h2>
 
-        <label>Заголовок *
-          <input name="title" placeholder="احصل على مكافأة 4000 درهم" required maxlength="500">
+        <label>Title *
+          <input name="title" placeholder="Get a bonus up to 4000 AED" required maxlength="500">
         </label>
 
-        <label>Подзаголовок
-          <input name="subtitle" placeholder="برموكود:" maxlength="500">
+        <label>Subtitle
+          <input name="subtitle" placeholder="Use promo code:" maxlength="500">
         </label>
 
-        <label>Промокод *
-          <input name="promo_code" placeholder="RIFINO50" required maxlength="100"
+        <label>Promo code *
+          <input name="promo_code" placeholder="BIGWIN50" required maxlength="100"
                  oninput="this.value=this.value.toUpperCase()">
         </label>
 
         <label>Redirect URL *
           <input name="redirect_url" type="url"
-                 placeholder="https://1xbet.com/register?promo=RIFINO50" required maxlength="2000">
+                 placeholder="https://example.com/register?promo=BIGWIN50" required maxlength="2000">
         </label>
 
-        <label>Кнопка CTA *
-          <input name="cta_text" placeholder="سجل الان" required maxlength="200">
+        <label>CTA button text *
+          <input name="cta_text" placeholder="Register now" required maxlength="200">
         </label>
 
         <!-- input OUTSIDE label so label click doesn't auto-open color picker -->
         <input type="color" name="accent_color" id="accentColorInput" value="#6c47ff"
                style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">
-        <div class="label-text">Акцентный цвет</div>
+        <div class="label-text">Accent color</div>
         <div class="color-swatches">
-          <span class="color-swatch active" data-color="#6c47ff" style="background:#6c47ff" title="Фиолетовый"></span>
-          <span class="color-swatch" data-color="#e63946" style="background:#e63946" title="Красный"></span>
-          <span class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Золотой"></span>
-          <span class="color-swatch" data-color="#10b981" style="background:#10b981" title="Зелёный"></span>
-          <span class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Синий"></span>
-          <span class="color-swatch" data-color="#f97316" style="background:#f97316" title="Оранжевый"></span>
-          <span class="color-swatch color-swatch-custom" id="customColorSwatch" title="Свой цвет"></span>
+          <span class="color-swatch active" data-color="#6c47ff" style="background:#6c47ff" title="Purple"></span>
+          <span class="color-swatch" data-color="#e63946" style="background:#e63946" title="Red"></span>
+          <span class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Gold"></span>
+          <span class="color-swatch" data-color="#10b981" style="background:#10b981" title="Green"></span>
+          <span class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Blue"></span>
+          <span class="color-swatch" data-color="#f97316" style="background:#f97316" title="Orange"></span>
+          <span class="color-swatch color-swatch-custom" id="customColorSwatch" title="Custom color"></span>
         </div>
         <span class="color-hex" id="accentHex">#6C47FF</span>
-        <p class="hint" style="margin-bottom:14px">Цвет акцента передаётся в промпт и все UI-элементы лендинга</p>
+        <p class="hint" style="margin-bottom:14px">Accent color is passed into the image prompt and all UI elements</p>
 
-        <label>Сцена для изображения
+        <label>Background scene
           <textarea name="image_prompt" rows="3"
-            placeholder="футболист бьёт по мячу на стадионе&#10;боксёр в углу ринга, прожекторы&#10;гонщик Формулы 1 на повороте"></textarea>
-          <span class="hint">Опишите сцену кратко — стиль, частицы и кинематограф добавляются автоматически · генерация ~2 мин</span>
+            placeholder="footballer scoring a goal in stadium&#10;boxer in corner of ring under spotlights&#10;Formula 1 car on a sharp turn"></textarea>
+          <span class="hint">Describe the scene briefly — cinematic style and lighting are added automatically · ~2 min to generate</span>
         </label>
 
         <button type="submit" class="btn-create" id="submitBtn">
-          Опубликовать лендинг
+          Publish landing
         </button>
       </form>
     </aside>
@@ -368,10 +368,10 @@ function renderAdmin(landings, baseUrl) {
       <!-- Layer constructor -->
       <div class="canvas-panel">
         <div class="canvas-panel-header">
-          <span class="canvas-panel-title">РАСПОЛОЖЕНИЕ СЛОЁВ</span>
+          <span class="canvas-panel-title">LAYER ORDER</span>
           <div class="sk-side-toggle">
-            <button type="button" class="sk-side-btn active" data-side="right">Панель справа</button>
-            <button type="button" class="sk-side-btn"        data-side="left" >Панель слева</button>
+            <button type="button" class="sk-side-btn active" data-side="right">Panel right</button>
+            <button type="button" class="sk-side-btn"        data-side="left" >Panel left</button>
           </div>
         </div>
 
@@ -379,29 +379,29 @@ function renderAdmin(landings, baseUrl) {
           <div class="sk-image-area"><span class="sk-img-icon">🖼</span></div>
           <div class="sk-panel-area" id="skPanelArea">${layerChips}</div>
         </div>
-        <p class="hint" style="margin-top:8px">Перетащите слои · позиции передаются в лендинг</p>
+        <p class="hint" style="margin-top:8px">Drag layers to reorder · layout is applied to the landing page</p>
       </div>
 
       <!-- Landings history -->
       <div class="landings-panel">
         <div class="content-header">
-          <h2>История генераций <span class="count">${landings.length}</span></h2>
-          ${hasPending ? `<span class="generating-note">⏳ Изображение генерируется…</span>` : ''}
+          <h2>Published landings <span class="count">${landings.length}</span></h2>
+          ${hasPending ? `<span class="generating-note">⏳ Image generating…</span>` : ''}
         </div>
 
-        ${landings.length === 0 ? '<div class="empty">Нет лендингов. Создайте первый!</div>' : `
+        ${landings.length === 0 ? '<div class="empty">No landings yet. Create your first one!</div>' : `
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>URL</th>
-                <th>Промокод</th>
-                <th>Заголовок</th>
+                <th>Promo code</th>
+                <th>Title</th>
                 <th>CTA</th>
-                <th>Изображение</th>
-                <th>Создан</th>
-                <th>Статус</th>
-                <th>Действия</th>
+                <th>Image</th>
+                <th>Created</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
