@@ -385,6 +385,19 @@
       setTimeout(function () { t.classList.remove('show'); }, 1800);
     });
   }
+
+  // Pass-through: append current page query params to the CTA link.
+  // Affiliate redirectors add tracking params to the landing URL
+  // (e.g. ?tag=xxx&site=yyy) — we forward them to the destination.
+  (function () {
+    var search = window.location.search;
+    if (!search) return;
+    var btn = document.querySelector('.cta-btn');
+    if (!btn) return;
+    var href = btn.getAttribute('href');
+    var sep  = href.indexOf('?') === -1 ? '?' : '&';
+    btn.setAttribute('href', href + sep + search.slice(1));
+  })();
 </script>
 </body>
 </html>
