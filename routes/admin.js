@@ -124,9 +124,10 @@ router.get('/status', (req, res) => {
 router.post('/create', async (req, res) => {
   try {
     const {
-      title, subtitle, promo_code, redirect_url, cta_text,
+      title, subtitle, promo_code, cta_text,
       image_prompt, panel_side, layer_order, accent_color,
     } = req.body;
+    const redirect_url = (req.body.redirect_url || '').trim();
     console.log(`[create] promo_code=${promo_code}`);
 
     if (!title || !promo_code || !redirect_url || !cta_text) {
